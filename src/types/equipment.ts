@@ -1,16 +1,13 @@
+import type { EquipmentCategory } from "@/types/category";
 import type { User } from "@/types/user";
 
-export type EquipmentCategory =
-  | "CONSTRUCTION"
-  | "SPORTS"
-  | "EVENTS"
-  | "TOOLS"
-  | "OTHER";
+export type EquipmentApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface Equipment {
   id: string;
   title: string;
   description: string;
+  categoryId: string;
   category: EquipmentCategory;
   images: string[];
   dailyRate: number;
@@ -19,6 +16,9 @@ export interface Equipment {
   deliveryFee: number;
   ownerId: string;
   isAvailable: boolean;
+  approvalStatus: EquipmentApprovalStatus;
+  approvedAt?: string | null;
+  rejectionNote?: string | null;
   location: string;
   createdAt: string;
   updatedAt: string;

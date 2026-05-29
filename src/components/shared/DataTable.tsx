@@ -7,7 +7,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { useMemo, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, Inbox, Search } from "lucide-react";
 import {
   Table,
@@ -32,6 +32,9 @@ export function DataTable<TData, TValue>(props: {
   pageSize?: number;
   /** Hide the search input */
   hideSearch?: boolean;
+  /** Row id to highlight (e.g. from notification deep link) */
+  highlightedRowId?: string | null;
+  getRowId?: (row: TData) => string;
 }): ReactElement {
   const {
     columns,
@@ -42,6 +45,8 @@ export function DataTable<TData, TValue>(props: {
     searchPlaceholder = "Search…",
     pageSize = 10,
     hideSearch = false,
+    highlightedRowId = null,
+    getRowId,
   } = props;
   const key = searchKey ?? filterKey;
   const [globalFilter, setGlobalFilter] = useState("");
@@ -71,6 +76,16 @@ export function DataTable<TData, TValue>(props: {
     getPaginationRowModel: getPaginationRowModel(),
     initialState: { pagination: { pageSize } },
   });
+
+  useEffect(() => {
+    if (!highlightedRowId || !getRowId) {
+      return;
+    }
+    const idx = filtered.findIndex((row) => getRowId(row) === highlightedRowId);
+    if (idx >= 0) {
+      table.setPageIndex(Math.floor(idx / pageSize));
+    }
+  }, [highlightedRowId, filtered, getRowId, pageSize, table]);
 
   return (
     <div className="space-y-3">
@@ -129,15 +144,26 @@ export function DataTable<TData, TValue>(props: {
                 </TableCell>
               </TableRow>
             ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="bg-white hover:bg-stone-50/80">
+              table.getRowModel().rows.map((row) => {
+                const rowKey = getRowId ? getRowId(row.original) : String(row.id);
+                const isHighlighted = highlightedRowId != null && rowKey === highlightedRowId;
+                return (
+                <TableRow
+                  key={row.id}
+                  id={getRowId ? `highlight-${rowKey}` : undefined}
+                  className={cn(
+                    "bg-white hover:bg-stone-50/80 transition-colors duration-300",
+                    isHighlighted && "bg-brand-50 ring-2 ring-inset ring-brand-500"
+                  )}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-4 py-3 text-xs text-stone-700">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
-              ))
+              );
+              })
             )}
           </TableBody>
         </Table>

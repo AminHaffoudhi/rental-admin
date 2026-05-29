@@ -8,6 +8,7 @@ const ROUTES: { pattern: string; label: string }[] = [
   { pattern: "/users/:id", label: "User detail" },
   { pattern: "/users", label: "Users" },
   { pattern: "/equipment", label: "Equipment" },
+  { pattern: "/reviews", label: "Reviews" },
   { pattern: "/bookings/:id", label: "Booking detail" },
   { pattern: "/bookings", label: "Bookings" },
   { pattern: "/deliveries", label: "Deliveries" },

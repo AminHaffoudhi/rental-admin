@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, type ReactElement } from "rea
 import { Bell, BellRing, X, CheckCheck, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   initOneSignal,
   onNotificationReceived,
@@ -14,6 +14,17 @@ import { api } from "@/services/api";
 import type { ApiResponse } from "@/types/api";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/utils/cn";
+import {
+  applyNotificationState,
+  dismissAllNotifications,
+  dismissNotification,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/notificationState";
+import {
+  equipmentIdFromNotification,
+  notificationTargetPath,
+} from "@/lib/notificationNavigation";
 
 interface AdminNotification {
   id: string;
@@ -45,6 +56,8 @@ const TYPE_CONFIG: Record<string, { emoji: string; bg: string }> = {
   dispute_opened: { emoji: "⚠️", bg: "bg-red-50" },
   payment_received: { emoji: "💰", bg: "bg-green-50" },
   payout_sent: { emoji: "💸", bg: "bg-green-50" },
+  equipment_pending: { emoji: "📦", bg: "bg-amber-50" },
+  review_pending: { emoji: "⭐", bg: "bg-amber-50" },
   general: { emoji: "🔔", bg: "bg-stone-50" },
 };
 
@@ -54,10 +67,12 @@ function load(): AdminNotification[] {
     if (!raw) {
       return [];
     }
-    return (JSON.parse(raw) as AdminNotification[]).map((n) => ({
-      ...n,
-      timestamp: new Date(n.timestamp),
-    }));
+    return applyNotificationState(
+      (JSON.parse(raw) as AdminNotification[]).map((n) => ({
+        ...n,
+        timestamp: new Date(n.timestamp),
+      }))
+    );
   } catch {
     return [];
   }
@@ -72,6 +87,7 @@ function save(notifications: AdminNotification[]): void {
 }
 
 export default function AdminNotificationBell(): ReactElement {
+  const navigate = useNavigate();
   const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
   const token = useAuthStore((s) => s.token);
   const [open, setOpen] = useState(false);
@@ -92,7 +108,7 @@ export default function AdminNotificationBell(): ReactElement {
 
   const add = useCallback((n: AdminNotification) => {
     setItems((prev) => {
-      const updated = [n, ...prev].slice(0, 50);
+      const updated = applyNotificationState([n, ...prev].slice(0, 50));
       save(updated);
       return updated;
     });
@@ -103,12 +119,19 @@ export default function AdminNotificationBell(): ReactElement {
       return;
     }
     const unsub = onNotificationReceived((title, body, data) => {
+      const type = (data.type as string) || "general";
+      const equipmentId =
+        typeof data.equipmentId === "string" ? data.equipmentId : null;
+      const rawUrl = typeof data.url === "string" ? data.url : undefined;
+      const url = rawUrl ? notificationTargetPath(rawUrl, equipmentId) : undefined;
       add({
-        id: crypto.randomUUID(),
+        id: equipmentId
+          ? `equipment-pending-${equipmentId}`
+          : crypto.randomUUID(),
         title,
         body,
-        type: (data.type as string) || "general",
-        url: (data.url as string) || undefined,
+        type,
+        url,
         timestamp: new Date(),
         read: false,
       });
@@ -137,12 +160,16 @@ export default function AdminNotificationBell(): ReactElement {
       }));
 
       setItems((prev) => {
-        const existingIds = new Set(prev.map((p) => p.id));
-        const trulyNew = incoming.filter((n) => !existingIds.has(n.id));
-        if (!trulyNew.length) {
-          return prev;
+        const byId = new Map(prev.map((p) => [p.id, p]));
+        for (const n of incoming) {
+          const existing = byId.get(n.id);
+          byId.set(n.id, existing ? { ...n, read: existing.read } : n);
         }
-        const merged = [...trulyNew, ...prev].slice(0, 50);
+        const merged = applyNotificationState(
+          [...byId.values()]
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+            .slice(0, 50)
+        );
         save(merged);
         return merged;
       });
@@ -188,8 +215,18 @@ export default function AdminNotificationBell(): ReactElement {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  function markRead(id: string): void {
+    markNotificationRead(id);
+    setItems((prev) => {
+      const u = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+      save(u);
+      return u;
+    });
+  }
+
   function markAllRead(): void {
     setItems((prev) => {
+      markAllNotificationsRead(prev.map((n) => n.id));
       const u = prev.map((n) => ({ ...n, read: true }));
       save(u);
       return u;
@@ -197,6 +234,7 @@ export default function AdminNotificationBell(): ReactElement {
   }
 
   function dismiss(id: string): void {
+    dismissNotification(id);
     setItems((prev) => {
       const u = prev.filter((n) => n.id !== id);
       save(u);
@@ -205,8 +243,19 @@ export default function AdminNotificationBell(): ReactElement {
   }
 
   function clearAll(): void {
-    setItems([]);
-    save([]);
+    setItems((prev) => {
+      dismissAllNotifications(prev.map((n) => n.id));
+      save([]);
+      return [];
+    });
+  }
+
+  function openNotification(n: AdminNotification): void {
+    if (!n.url) {
+      return;
+    }
+    const equipmentId = equipmentIdFromNotification(n);
+    navigate(notificationTargetPath(n.url, equipmentId));
   }
 
   async function enableNotifications(): Promise<void> {
@@ -318,8 +367,27 @@ export default function AdminNotificationBell(): ReactElement {
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.18 }}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          markRead(n.id);
+                          if (n.url) {
+                            setOpen(false);
+                            openNotification(n);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            markRead(n.id);
+                            if (n.url) {
+                              setOpen(false);
+                              openNotification(n);
+                            }
+                          }
+                        }}
                         className={cn(
-                          "group relative flex cursor-default gap-3 border-b border-stone-50 px-4 py-3 transition-colors last:border-0",
+                          "group relative flex cursor-pointer gap-3 border-b border-stone-50 px-4 py-3 transition-colors last:border-0",
                           n.read ? "hover:bg-stone-50" : "bg-brand-50/20 hover:bg-brand-50/40"
                         )}
                       >
@@ -341,15 +409,26 @@ export default function AdminNotificationBell(): ReactElement {
                             <span className="text-[10px] text-stone-400">
                               {formatDistanceToNow(n.timestamp, { addSuffix: true })}
                             </span>
-                            {n.url && (
+                            {n.url ? (
                               <Link
-                                to={n.url}
-                                onClick={() => setOpen(false)}
+                                to={
+                                  n.url
+                                    ? notificationTargetPath(
+                                        n.url,
+                                        equipmentIdFromNotification(n)
+                                      )
+                                    : "#"
+                                }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markRead(n.id);
+                                  setOpen(false);
+                                }}
                                 className="flex items-center gap-0.5 text-[10px] font-semibold text-brand-500 hover:underline"
                               >
                                 View <ExternalLink size={9} />
                               </Link>
-                            )}
+                            ) : null}
                           </div>
                         </div>
 
@@ -357,7 +436,10 @@ export default function AdminNotificationBell(): ReactElement {
 
                         <button
                           type="button"
-                          onClick={() => dismiss(n.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismiss(n.id);
+                          }}
                           className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-stone-100 opacity-0 transition-opacity hover:bg-stone-200 group-hover:opacity-100"
                           aria-label="Dismiss"
                         >

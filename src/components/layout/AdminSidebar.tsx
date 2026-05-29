@@ -6,9 +6,11 @@ import {
   CreditCard,
   ChevronRight,
   LayoutDashboard,
+  Layers,
   LogOut,
   Package,
   Shield,
+  Star,
   Truck,
   Users,
 } from "lucide-react";
@@ -24,7 +26,9 @@ const NAV: {
     links: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
       { to: "/users", label: "Users", icon: Users },
+      { to: "/categories", label: "Categories", icon: Layers },
       { to: "/equipment", label: "Equipment", icon: Package },
+      { to: "/reviews", label: "Reviews", icon: Star },
       { to: "/bookings", label: "Bookings", icon: CalendarCheck },
     ],
   },

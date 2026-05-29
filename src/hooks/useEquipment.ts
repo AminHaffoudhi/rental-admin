@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import * as equipmentService from "@/services/equipment.service";
-import type { Equipment } from "@/types/equipment";
+import type { Equipment, EquipmentApprovalStatus } from "@/types/equipment";
 
 export function useEquipment(filters?: {
   category?: string;
   search?: string;
   ownerId?: string;
+  status?: EquipmentApprovalStatus;
 }): {
   equipment: Equipment[];
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
   deleteEquipment: (id: string) => Promise<void>;
+  approveEquipment: (id: string) => Promise<void>;
+  rejectEquipment: (id: string, note: string) => Promise<void>;
 } {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +31,7 @@ export function useEquipment(filters?: {
     } finally {
       setIsLoading(false);
     }
-  }, [filters?.category, filters?.search, filters?.ownerId]);
+  }, [filters?.category, filters?.search, filters?.ownerId, filters?.status]);
 
   useEffect(() => {
     void refetch();
@@ -42,5 +45,21 @@ export function useEquipment(filters?: {
     [refetch]
   );
 
-  return { equipment, isLoading, error, refetch, deleteEquipment };
+  const approveEquipment = useCallback(
+    async (id: string) => {
+      await equipmentService.approveEquipment(id);
+      await refetch();
+    },
+    [refetch]
+  );
+
+  const rejectEquipment = useCallback(
+    async (id: string, note: string) => {
+      await equipmentService.rejectEquipment(id, note);
+      await refetch();
+    },
+    [refetch]
+  );
+
+  return { equipment, isLoading, error, refetch, deleteEquipment, approveEquipment, rejectEquipment };
 }
