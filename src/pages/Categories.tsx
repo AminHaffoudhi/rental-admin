@@ -341,7 +341,7 @@ export function Categories(): ReactElement {
                   {uploading ? "Uploading…" : "Upload to storage"}
                 </Button>
               </div>
-              <p className="text-xs text-stone-500">PNG or SVG recommended, max 2MB. Stored in MinIO.</p>
+              <p className="text-xs text-stone-500">PNG or SVG recommended, max 2MB. Stored in Cloudinary.</p>
             </div>
 
             <div className="space-y-2">

@@ -1,5 +1,21 @@
 import { useState, useEffect, useRef, useCallback, type ReactElement } from "react";
-import { Bell, BellRing, X, CheckCheck, ExternalLink } from "lucide-react";
+import {
+  AlertTriangle,
+  Banknote,
+  Bell,
+  BellRing,
+  CalendarClock,
+  CheckCheck,
+  ExternalLink,
+  Package,
+  ShieldCheck,
+  ShieldX,
+  Star,
+  UserPlus,
+  Wallet,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
@@ -46,19 +62,25 @@ interface ApiNotificationRow {
   read: boolean;
 }
 
-const TYPE_CONFIG: Record<string, { emoji: string; bg: string }> = {
-  new_user: { emoji: "👤", bg: "bg-blue-50" },
-  kyc_submitted: { emoji: "🪪", bg: "bg-yellow-50" },
-  kyc_approved: { emoji: "✅", bg: "bg-green-50" },
-  kyc_rejected: { emoji: "❌", bg: "bg-red-50" },
-  booking_request: { emoji: "📬", bg: "bg-brand-50" },
-  dispute_admin: { emoji: "⚠️", bg: "bg-red-50" },
-  dispute_opened: { emoji: "⚠️", bg: "bg-red-50" },
-  payment_received: { emoji: "💰", bg: "bg-green-50" },
-  payout_sent: { emoji: "💸", bg: "bg-green-50" },
-  equipment_pending: { emoji: "📦", bg: "bg-amber-50" },
-  review_pending: { emoji: "⭐", bg: "bg-amber-50" },
-  general: { emoji: "🔔", bg: "bg-stone-50" },
+type NotificationVisual = {
+  Icon: LucideIcon;
+  bg: string;
+  iconClass: string;
+};
+
+const TYPE_CONFIG: Record<string, NotificationVisual> = {
+  new_user: { Icon: UserPlus, bg: "bg-blue-50", iconClass: "text-blue-600" },
+  kyc_submitted: { Icon: ShieldCheck, bg: "bg-amber-50", iconClass: "text-amber-600" },
+  kyc_approved: { Icon: ShieldCheck, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
+  kyc_rejected: { Icon: ShieldX, bg: "bg-red-50", iconClass: "text-red-600" },
+  booking_request: { Icon: CalendarClock, bg: "bg-brand-50", iconClass: "text-brand-600" },
+  dispute_admin: { Icon: AlertTriangle, bg: "bg-red-50", iconClass: "text-red-600" },
+  dispute_opened: { Icon: AlertTriangle, bg: "bg-red-50", iconClass: "text-red-600" },
+  payment_received: { Icon: Wallet, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
+  payout_sent: { Icon: Banknote, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
+  equipment_pending: { Icon: Package, bg: "bg-amber-50", iconClass: "text-amber-600" },
+  review_pending: { Icon: Star, bg: "bg-amber-50", iconClass: "text-amber-600" },
+  general: { Icon: Bell, bg: "bg-stone-100", iconClass: "text-stone-500" },
 };
 
 function load(): AdminNotification[] {
@@ -359,6 +381,7 @@ export default function AdminNotificationBell(): ReactElement {
                 <AnimatePresence initial={false}>
                   {items.map((n) => {
                     const cfg = TYPE_CONFIG[n.type] ?? TYPE_CONFIG.general;
+                    const { Icon } = cfg;
                     return (
                       <motion.div
                         key={n.id}
@@ -391,8 +414,13 @@ export default function AdminNotificationBell(): ReactElement {
                           n.read ? "hover:bg-stone-50" : "bg-brand-50/20 hover:bg-brand-50/40"
                         )}
                       >
-                        <div className={cn("mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-sm", cfg.bg)}>
-                          {cfg.emoji}
+                        <div
+                          className={cn(
+                            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl",
+                            cfg.bg
+                          )}
+                        >
+                          <Icon size={15} strokeWidth={2} className={cfg.iconClass} aria-hidden />
                         </div>
 
                         <div className="min-w-0 flex-1 pr-5">
