@@ -16,6 +16,7 @@ import { Reviews } from "@/pages/Reviews";
 import { Login } from "@/pages/Login";
 import { Payments } from "@/pages/Payments";
 import { UserDetail } from "@/pages/UserDetail";
+import { ProfileSettings } from "@/pages/ProfileSettings";
 import { Users } from "@/pages/Users";
 
 export default function App(): ReactElement {
@@ -39,6 +40,7 @@ export default function App(): ReactElement {
           <Route path="/disputes/:id" element={<DisputeDetail />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/:id" element={<ReportDetail />} />
+          <Route path="/settings" element={<ProfileSettings />} />
         </Route>
       </Route>
 

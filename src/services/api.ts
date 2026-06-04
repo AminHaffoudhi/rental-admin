@@ -48,3 +48,31 @@ export function unwrap<T>(res: AxiosResponse<ApiResponse<T>>): T {
   }
   return body.data;
 }
+
+export function getApiErrorDetail(error: unknown): {
+  message: string;
+  code?: string;
+  fields?: Record<string, string>;
+} {
+  if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
+    const data = error.response.data as {
+      message?: unknown;
+      code?: unknown;
+      fields?: unknown;
+    };
+    if (typeof data.message === "string") {
+      return {
+        message: data.message,
+        code: typeof data.code === "string" ? data.code : undefined,
+        fields:
+          data.fields && typeof data.fields === "object" && !Array.isArray(data.fields)
+            ? (data.fields as Record<string, string>)
+            : undefined,
+      };
+    }
+  }
+  if (error instanceof Error) {
+    return { message: error.message };
+  }
+  return { message: "Something went wrong" };
+}

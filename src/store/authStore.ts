@@ -7,6 +7,7 @@ interface AdminAuthState {
   token: string | null;
   isAuthenticated: boolean;
   setAuth: (admin: User, token: string) => void;
+  setAdmin: (admin: User) => void;
   clearAuth: () => void;
 }
 
@@ -17,6 +18,7 @@ export const useAuthStore = create<AdminAuthState>()(
       token: null,
       isAuthenticated: false,
       setAuth: (admin, token) => set({ admin, token, isAuthenticated: true }),
+      setAdmin: (admin) => set({ admin }),
       clearAuth: () => set({ admin: null, token: null, isAuthenticated: false }),
     }),
     {

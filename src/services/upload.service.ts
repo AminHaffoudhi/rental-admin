@@ -6,17 +6,24 @@ export interface UploadResult {
   url: string;
 }
 
-export async function uploadCategoryIcon(file: File): Promise<UploadResult> {
-  const contentType = file.type || "image/png";
+async function uploadImage(file: File, folder: "categories" | "avatars"): Promise<UploadResult> {
+  const contentType = file.type || "image/jpeg";
   const res = await api.post("/upload/direct", file, {
     headers: {
       "Content-Type": contentType,
       "X-File-Name": encodeURIComponent(file.name),
-      "X-Upload-Folder": "categories",
+      "X-Upload-Folder": folder,
       "X-File-Size": String(file.size),
     },
     transformRequest: [(data) => data],
   });
-  const data = unwrap(res) as UploadResult;
-  return data;
+  return unwrap(res) as UploadResult;
+}
+
+export async function uploadCategoryIcon(file: File): Promise<UploadResult> {
+  return uploadImage(file, "categories");
+}
+
+export async function uploadAvatar(file: File): Promise<UploadResult> {
+  return uploadImage(file, "avatars");
 }

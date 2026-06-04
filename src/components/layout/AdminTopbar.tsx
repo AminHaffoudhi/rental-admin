@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Menu } from "lucide-react";
-import { matchPath, useLocation } from "react-router-dom";
+import { Link, matchPath, useLocation } from "react-router-dom";
 import AdminNotificationBell from "@/components/shared/AdminNotificationBell";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -21,6 +21,7 @@ const ROUTES: { pattern: string; label: string }[] = [
   { pattern: "/disputes", label: "Disputes" },
   { pattern: "/reports/:id", label: "Report detail" },
   { pattern: "/reports", label: "Reports" },
+  { pattern: "/settings", label: "Account settings" },
 ];
 
 function titleForPath(pathname: string): string {
@@ -58,9 +59,17 @@ export function AdminTopbar(props: { onOpenMenu?: () => void }): ReactElement {
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <AdminNotificationBell />
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-500">
-          <span className="text-xs font-bold text-white">{admin?.name?.charAt(0) || "A"}</span>
-        </div>
+        <Link
+          to="/settings"
+          className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500 ring-2 ring-transparent transition hover:ring-brand-300 dark:hover:ring-brand-600"
+          aria-label="Profile settings"
+        >
+          {admin?.image ? (
+            <img src={admin.image} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-xs font-bold text-white">{admin?.name?.charAt(0) || "A"}</span>
+          )}
+        </Link>
       </div>
     </header>
   );

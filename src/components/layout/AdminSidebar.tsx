@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   CalendarCheck,
@@ -10,6 +10,7 @@ import {
   Layers,
   LogOut,
   Package,
+  Settings,
   Star,
   Truck,
   Users,
@@ -108,15 +109,24 @@ export function AdminSidebar(props: {
       </nav>
 
       <div className="border-t border-stone-800 p-3">
-        <div className="mb-1 flex items-center gap-2.5 px-2 py-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500">
-            <span className="text-xs font-bold text-white">{admin?.name?.charAt(0) || "A"}</span>
+        <Link
+          to="/settings"
+          onClick={props.onCloseMobile}
+          className="mb-1 flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-stone-800/80"
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500">
+            {admin?.image ? (
+              <img src={admin.image} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-xs font-bold text-white">{admin?.name?.charAt(0) || "A"}</span>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-stone-200">{admin?.name}</p>
             <p className="truncate text-[10px] text-stone-500">{admin?.email}</p>
           </div>
-        </div>
+          <Settings size={14} className="shrink-0 text-stone-500" />
+        </Link>
         <button
           type="button"
           onClick={() => {
