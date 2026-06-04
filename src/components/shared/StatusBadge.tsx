@@ -34,6 +34,8 @@ const STATUS_MAP: Record<string, { label: string; className: string; dot: string
   ARCHIVED: { label: "Archived", className: "badge-stone", dot: "bg-stone-400" },
   CONTACT: { label: "Contact", className: "badge-blue", dot: "bg-blue-400" },
   REPORT: { label: "Issue", className: "badge-red", dot: "bg-red-400" },
+  NOT_REQUIRED: { label: "Not required", className: "badge-stone", dot: "bg-stone-400" },
+  BLOCKED: { label: "Blocked", className: "badge-red", dot: "bg-red-500" },
 };
 
 export function StatusBadge({ status, showDot = true }: { status: string; showDot?: boolean }) {

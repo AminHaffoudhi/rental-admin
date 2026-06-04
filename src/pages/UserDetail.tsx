@@ -9,6 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -24,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import * as userService from "@/services/user.service";
+import { canReviewKyc, displayKycStatus } from "@/lib/userDisplay";
 import type { AdminUserDetail } from "@/types/admin";
 import type { Role } from "@/types/user";
 import { formatCurrency } from "@/utils/currency";
@@ -35,6 +45,9 @@ export function UserDetail(): ReactElement {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<Role>("RENTER");
   const [approveOpen, setApproveOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [unblockOpen, setUnblockOpen] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
 
   async function load() {
     if (!id) return;
@@ -70,6 +83,31 @@ export function UserDetail(): ReactElement {
     try {
       await userService.approveKyc(id);
       toast.success("KYC approved");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
+  }
+
+  async function blockAccount() {
+    if (!id) return;
+    try {
+      await userService.blockUser(id, blockReason.trim() || undefined);
+      toast.success("User blocked");
+      setBlockReason("");
+      setBlockOpen(false);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
+  }
+
+  async function unblockAccount() {
+    if (!id) return;
+    try {
+      await userService.unblockUser(id);
+      toast.success("User unblocked");
+      setUnblockOpen(false);
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
@@ -120,15 +158,21 @@ export function UserDetail(): ReactElement {
               </div>
             ) : null}
             <div className="flex flex-wrap gap-2">
-              {user.kycStatus === "SUBMITTED" ? (
-                <>
-                  <Button size="sm" onClick={() => setApproveOpen(true)}>
-                    Approve KYC
+              {canReviewKyc(user) ? (
+                <Button size="sm" onClick={() => setApproveOpen(true)}>
+                  Approve KYC
+                </Button>
+              ) : null}
+              {user.role !== "ADMIN" ? (
+                user.blockedAt ? (
+                  <Button size="sm" variant="outline" onClick={() => setUnblockOpen(true)}>
+                    Unblock user
                   </Button>
-                  <Button size="sm" variant="destructive" asChild>
-                    <Link to={`/users`}>Use list to reject</Link>
+                ) : (
+                  <Button size="sm" variant="destructive" onClick={() => setBlockOpen(true)}>
+                    Block user
                   </Button>
-                </>
+                )
               ) : null}
             </div>
             <div className="flex flex-wrap items-end gap-2">
@@ -142,7 +186,6 @@ export function UserDetail(): ReactElement {
                     <SelectItem value="RENTER">RENTER</SelectItem>
                     <SelectItem value="OWNER">OWNER</SelectItem>
                     <SelectItem value="BOTH">BOTH</SelectItem>
-                    <SelectItem value="ADMIN">ADMIN</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -280,6 +323,48 @@ export function UserDetail(): ReactElement {
         title="Approve KYC?"
         confirmLabel="Approve"
       />
+
+      <ConfirmDialog
+        open={unblockOpen}
+        onClose={() => setUnblockOpen(false)}
+        onConfirm={() => void unblockAccount()}
+        title="Unblock user?"
+        description="They will be able to sign in again."
+        confirmLabel="Unblock"
+      />
+
+      <Dialog open={blockOpen} onOpenChange={(o) => !o && setBlockOpen(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Block user</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            They will be signed out and cannot log in until unblocked.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="detail-block-reason">Reason (optional)</Label>
+            <Textarea
+              id="detail-block-reason"
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setBlockOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={() => void blockAccount()}
+            >
+              Block user
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

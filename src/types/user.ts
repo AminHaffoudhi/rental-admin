@@ -22,5 +22,7 @@ export interface User {
   kycDocument?: KycDocumentBrief | null;
   phone?: string;
   canList?: boolean;
+  blockedAt?: string | null;
+  blockedReason?: string | null;
   createdAt: string;
 }

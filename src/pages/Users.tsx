@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useUsers } from "@/hooks/useUsers";
+import { isOwnerRole } from "@/lib/userDisplay";
 import type { Role } from "@/types/user";
 import type { User } from "@/types/user";
 
@@ -61,20 +62,31 @@ export function Users(): ReactElement {
 
   const afterMutation = useCallback(() => void refetchAll(), [refetchAll]);
 
-  const { users, isLoading, approveKyc, rejectKyc, updateRole } = useUsers(filters, {
-    afterMutation,
-  });
+  const { users, isLoading, approveKyc, rejectKyc, updateRole, blockUser, unblockUser } = useUsers(
+    filters,
+    { afterMutation }
+  );
 
   const stats = useMemo(() => {
     const totalUsers = allUsers.length;
-    const pendingKyc = allUsers.filter((u) => u.kycStatus === "SUBMITTED").length;
-    const verifiedUsers = allUsers.filter((u) => u.kycStatus === "APPROVED").length;
-    const rejectedUsers = allUsers.filter((u) => u.kycStatus === "REJECTED").length;
-    return { totalUsers, pendingKyc, verifiedUsers, rejectedUsers };
+    const pendingKyc = allUsers.filter(
+      (u) => isOwnerRole(u.role) && u.kycStatus === "SUBMITTED"
+    ).length;
+    const verifiedUsers = allUsers.filter(
+      (u) => isOwnerRole(u.role) && u.kycStatus === "APPROVED"
+    ).length;
+    const rejectedUsers = allUsers.filter(
+      (u) => isOwnerRole(u.role) && u.kycStatus === "REJECTED"
+    ).length;
+    const blockedUsers = allUsers.filter((u) => u.blockedAt).length;
+    return { totalUsers, pendingKyc, verifiedUsers, rejectedUsers, blockedUsers };
   }, [allUsers]);
 
   const pendingKyc = useMemo(
-    () => users.filter((u) => u.kycStatus === "SUBMITTED" && u.kycDocument),
+    () =>
+      users.filter(
+        (u) => isOwnerRole(u.role) && u.kycStatus === "SUBMITTED" && u.kycDocument
+      ),
     [users]
   );
 
@@ -83,6 +95,9 @@ export function Users(): ReactElement {
   const [rejectNote, setRejectNote] = useState("");
   const [roleUser, setRoleUser] = useState<User | null>(null);
   const [roleValue, setRoleValue] = useState<Role>("RENTER");
+  const [blockUserId, setBlockUserId] = useState<string | null>(null);
+  const [blockReason, setBlockReason] = useState("");
+  const [unblockUserId, setUnblockUserId] = useState<string | null>(null);
 
   async function handleApprove(): Promise<void> {
     if (!approveId) {
@@ -115,6 +130,31 @@ export function Users(): ReactElement {
     }
   }
 
+  async function handleBlock(): Promise<void> {
+    if (!blockUserId) {
+      return;
+    }
+    try {
+      await blockUser(blockUserId, blockReason.trim() || undefined);
+      setBlockReason("");
+      setBlockUserId(null);
+    } catch {
+      /* toast in hook */
+    }
+  }
+
+  async function handleUnblock(): Promise<void> {
+    if (!unblockUserId) {
+      return;
+    }
+    try {
+      await unblockUser(unblockUserId);
+      setUnblockUserId(null);
+    } catch {
+      /* toast in hook */
+    }
+  }
+
   async function handleRoleSave(): Promise<void> {
     if (!roleUser) {
       return;
@@ -132,11 +172,12 @@ export function Users(): ReactElement {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <StatCard label="Total Users" value={stats.totalUsers} icon={UsersIcon} />
         <StatCard label="Pending KYC" value={stats.pendingKyc} icon={Clock} />
         <StatCard label="Verified" value={stats.verifiedUsers} icon={Check} />
         <StatCard label="Rejected" value={stats.rejectedUsers} icon={X} />
+        <StatCard label="Blocked" value={stats.blockedUsers} icon={X} />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -162,11 +203,15 @@ export function Users(): ReactElement {
         <div className="space-y-4">
           {pendingKyc.length === 0 && !listLoading ? (
             <div className="py-16 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50">
-                <CheckCircle size={28} className="text-green-500" />
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 dark:bg-green-950/50">
+                <CheckCircle size={28} className="text-green-500 dark:text-green-400" />
               </div>
-              <h3 className="font-display text-lg text-stone-900">All caught up!</h3>
-              <p className="mt-1 text-sm text-stone-500">No pending KYC submissions to review</p>
+              <h3 className="font-display text-lg text-stone-900 dark:text-stone-100">
+                All caught up!
+              </h3>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                No pending owner KYC submissions to review
+              </p>
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
@@ -191,20 +236,20 @@ export function Users(): ReactElement {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="w-full space-y-1 sm:w-auto sm:min-w-[200px] sm:flex-1 sm:max-w-xs">
           <Label className="text-xs">Search</Label>
           <Input
             placeholder="Name or email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-[220px]"
+            className="w-full"
           />
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Role</Label>
           <Select value={role ?? "all"} onValueChange={(v) => setRole(v === "all" ? undefined : v)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
@@ -212,7 +257,6 @@ export function Users(): ReactElement {
               <SelectItem value="RENTER">Renter</SelectItem>
               <SelectItem value="OWNER">Owner</SelectItem>
               <SelectItem value="BOTH">Both</SelectItem>
-              <SelectItem value="ADMIN">Admin</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -220,7 +264,7 @@ export function Users(): ReactElement {
           <div className="space-y-1">
             <Label className="text-xs">KYC</Label>
             <Select value={kycStatus ?? "all"} onValueChange={(v) => setKycStatus(v === "all" ? undefined : v)}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
@@ -235,20 +279,79 @@ export function Users(): ReactElement {
         ) : null}
       </div>
 
-      <UsersTable
-        users={users}
-        isLoading={listLoading}
-        onApproveKyc={(id) => setApproveId(id)}
-        onRejectKyc={(id) => {
-          const found = users.find((x) => x.id === id);
-          if (found) {
-            setRejectUser(found);
+      {tab === "all" ? (
+        <UsersTable
+          users={users}
+          isLoading={listLoading}
+          onApproveKyc={(id) => setApproveId(id)}
+          onRejectKyc={(id) => {
+            const found = users.find((x) => x.id === id);
+            if (found) {
+              setRejectUser(found);
+            }
+          }}
+          onChangeRoleClick={(u) => {
+            setRoleUser(u);
+            setRoleValue(u.role);
+          }}
+          onBlock={(id) => setBlockUserId(id)}
+          onUnblock={(id) => setUnblockUserId(id)}
+        />
+      ) : null}
+
+      <Dialog
+        open={blockUserId !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setBlockUserId(null);
+            setBlockReason("");
           }
         }}
-        onChangeRoleClick={(u) => {
-          setRoleUser(u);
-          setRoleValue(u.role);
-        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Block user</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="block-reason">Reason (optional)</Label>
+            <Textarea
+              id="block-reason"
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. Terms violation, fraudulent activity"
+              maxLength={500}
+            />
+          </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setBlockUserId(null);
+                setBlockReason("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={() => void handleBlock()}
+            >
+              Block user
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={unblockUserId !== null}
+        onClose={() => setUnblockUserId(null)}
+        onConfirm={() => void handleUnblock()}
+        title="Unblock user?"
+        description="They will be able to sign in again."
+        confirmLabel="Unblock"
       />
 
       <ConfirmDialog
@@ -299,7 +402,6 @@ export function Users(): ReactElement {
               <SelectItem value="RENTER">RENTER</SelectItem>
               <SelectItem value="OWNER">OWNER</SelectItem>
               <SelectItem value="BOTH">BOTH</SelectItem>
-              <SelectItem value="ADMIN">ADMIN</SelectItem>
             </SelectContent>
           </Select>
           <DialogFooter>

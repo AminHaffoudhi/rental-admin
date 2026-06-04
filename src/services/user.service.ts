@@ -34,3 +34,13 @@ export async function updateRole(userId: string, role: Role): Promise<User> {
   const res = await api.put(`/users/${userId}/role`, { role });
   return unwrap(res);
 }
+
+export async function blockUser(userId: string, reason?: string): Promise<User> {
+  const res = await api.post(`/users/${userId}/block`, { reason });
+  return unwrap(res);
+}
+
+export async function unblockUser(userId: string): Promise<User> {
+  const res = await api.post(`/users/${userId}/unblock`);
+  return unwrap(res);
+}

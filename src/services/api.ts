@@ -16,14 +16,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function isAccountBlocked(error: unknown): boolean {
+  if (!axios.isAxiosError(error) || !error.response?.data || typeof error.response.data !== "object") {
+    return false;
+  }
+  return (error.response.data as { code?: unknown }).code === "ACCOUNT_BLOCKED";
+}
+
 api.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
+    if (!axios.isAxiosError(error)) {
+      return Promise.reject(error);
+    }
+    const blocked = error.response?.status === 403 && isAccountBlocked(error);
+    if (error.response?.status === 401 || blocked) {
       useAuthStore.getState().clearAuth();
       const path = window.location.pathname;
       if (path !== "/login") {
-        window.location.assign("/login");
+        window.location.assign(blocked ? "/login?blocked=1" : "/login");
       }
     }
     return Promise.reject(error);

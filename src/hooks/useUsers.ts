@@ -15,6 +15,8 @@ export function useUsers(
   approveKyc: (userId: string) => Promise<void>;
   rejectKyc: (userId: string, note: string) => Promise<void>;
   updateRole: (userId: string, role: Role) => Promise<void>;
+  blockUser: (userId: string, reason?: string) => Promise<void>;
+  unblockUser: (userId: string) => Promise<void>;
 } {
   const afterMutationRef = useRef(options?.afterMutation);
   useEffect(() => {
@@ -87,5 +89,47 @@ export function useUsers(
     [fetchUsers]
   );
 
-  return { users, isLoading, error, refetch: fetchUsers, approveKyc, rejectKyc, updateRole };
+  const blockUser = useCallback(
+    async (userId: string, reason?: string) => {
+      try {
+        await userService.blockUser(userId, reason);
+        toast.success("User blocked — they can no longer sign in");
+        await fetchUsers();
+        await afterMutationRef.current?.();
+      } catch (err) {
+        toast.error("Failed to block user");
+        await fetchUsers();
+        throw err;
+      }
+    },
+    [fetchUsers]
+  );
+
+  const unblockUser = useCallback(
+    async (userId: string) => {
+      try {
+        await userService.unblockUser(userId);
+        toast.success("User unblocked");
+        await fetchUsers();
+        await afterMutationRef.current?.();
+      } catch (err) {
+        toast.error("Failed to unblock user");
+        await fetchUsers();
+        throw err;
+      }
+    },
+    [fetchUsers]
+  );
+
+  return {
+    users,
+    isLoading,
+    error,
+    refetch: fetchUsers,
+    approveKyc,
+    rejectKyc,
+    updateRole,
+    blockUser,
+    unblockUser,
+  };
 }

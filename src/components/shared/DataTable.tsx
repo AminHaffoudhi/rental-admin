@@ -101,17 +101,21 @@ export function DataTable<TData, TValue>(props: {
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-stone-100">
+      <div className="overflow-x-auto rounded-xl border border-stone-100 dark:border-stone-800">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="border-stone-100 bg-stone-50 hover:bg-stone-50">
+              <TableRow
+                key={hg.id}
+                className="border-stone-100 bg-stone-50 hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-900/80 dark:hover:bg-stone-900/80"
+              >
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     className={cn(
-                      "px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-stone-500",
-                      header.column.getCanSort() && "cursor-pointer select-none hover:text-stone-700"
+                      "px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400",
+                      header.column.getCanSort() &&
+                        "cursor-pointer select-none hover:text-stone-700 dark:hover:text-stone-200"
                     )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
@@ -152,12 +156,16 @@ export function DataTable<TData, TValue>(props: {
                   key={row.id}
                   id={getRowId ? `highlight-${rowKey}` : undefined}
                   className={cn(
-                    "bg-white hover:bg-stone-50/80 transition-colors duration-300",
-                    isHighlighted && "bg-brand-50 ring-2 ring-inset ring-brand-500"
+                    "border-stone-100 bg-white transition-colors duration-300 hover:bg-stone-50/80 dark:border-stone-800 dark:bg-stone-950 dark:hover:bg-stone-900/60",
+                    isHighlighted &&
+                      "bg-brand-50 ring-2 ring-inset ring-brand-500 dark:bg-brand-950/40 dark:ring-brand-500"
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-3 text-xs text-stone-700">
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-3 text-xs text-stone-700 dark:text-stone-300"
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -171,7 +179,7 @@ export function DataTable<TData, TValue>(props: {
 
       {!isLoading && table.getPageCount() > 1 ? (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-stone-400 dark:text-stone-500">
             {table.getFilteredRowModel().rows.length} results · Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </p>
@@ -193,7 +201,7 @@ export function DataTable<TData, TValue>(props: {
                   "flex h-7 w-7 items-center justify-center rounded-lg text-xs font-semibold transition-all",
                   table.getState().pagination.pageIndex === i
                     ? "bg-brand-500 text-white"
-                    : "text-stone-500 hover:bg-stone-100"
+                    : "text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
                 )}
               >
                 {i + 1}
