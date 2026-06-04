@@ -5,7 +5,9 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { z } from "zod";
-import { AlertCircle, Eye, EyeOff, Loader2, Shield } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { PlatformLogo } from "@/components/brand/PlatformLogo";
+import { PLATFORM_NAME } from "@/config/brand";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 const schema = z.object({
@@ -57,10 +59,10 @@ export function Login(): ReactElement {
             }}
           />
           <div className="relative z-10">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500">
-              <Shield size={32} className="text-white" />
+            <div className="mx-auto mb-6 flex justify-center">
+              <PlatformLogo size="2xl" linkTo={false} className="brightness-0 invert" />
             </div>
-            <h1 className="font-display mb-2 text-2xl font-semibold text-white">RentMarket</h1>
+            <h1 className="font-display mb-2 text-2xl font-semibold text-white">{PLATFORM_NAME}</h1>
             <p className="mb-8 text-sm text-stone-400">Admin Control Panel</p>
             <div className="space-y-3 text-left">
               {[
@@ -80,6 +82,7 @@ export function Login(): ReactElement {
 
         <div className="flex flex-1 flex-col justify-center p-8 sm:p-10">
           <div className="mb-8">
+            <PlatformLogo size="md" className="mb-6 md:hidden" />
             <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-3 py-1">
               <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />
               <span className="text-xs font-semibold text-brand-700">Admin Access Only</span>

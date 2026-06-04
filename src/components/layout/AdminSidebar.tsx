@@ -4,16 +4,17 @@ import {
   AlertTriangle,
   CalendarCheck,
   CreditCard,
+  Inbox,
   ChevronRight,
   LayoutDashboard,
   Layers,
   LogOut,
   Package,
-  Shield,
   Star,
   Truck,
   Users,
 } from "lucide-react";
+import { PlatformLogo } from "@/components/brand/PlatformLogo";
 import { cn } from "@/lib/utils";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
@@ -38,25 +39,29 @@ const NAV: {
       { to: "/deliveries", label: "Deliveries", icon: Truck },
       { to: "/payments", label: "Payments", icon: CreditCard },
       { to: "/disputes", label: "Disputes", icon: AlertTriangle },
+      { to: "/reports", label: "Reports", icon: Inbox },
     ],
   },
 ];
 
-export function AdminSidebar(): ReactElement {
+export function AdminSidebar(props: {
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}): ReactElement {
   const { admin, logout } = useAdminAuth();
   const navigate = useNavigate();
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col bg-stone-900">
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 flex h-full w-56 shrink-0 flex-col bg-stone-900 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0",
+        props.mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}
+    >
       <div className="border-b border-stone-800 px-5 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500">
-            <Shield size={16} className="text-white" />
-          </div>
-          <div>
-            <p className="font-display text-sm font-semibold leading-tight text-white">RentMarket</p>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-stone-500">Admin Panel</p>
-          </div>
+          <PlatformLogo size="sm" linkTo="/" className="brightness-0 invert" />
+          <p className="text-[10px] font-medium uppercase tracking-wider text-stone-500">Admin Panel</p>
         </div>
       </div>
 
@@ -72,6 +77,7 @@ export function AdminSidebar(): ReactElement {
                   <NavLink
                     to={link.to}
                     end={link.end}
+                    onClick={props.onCloseMobile}
                     className={({ isActive }) =>
                       cn(
                         "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all",

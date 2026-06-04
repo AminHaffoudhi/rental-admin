@@ -29,6 +29,11 @@ const STATUS_MAP: Record<string, { label: string; className: string; dot: string
   RENTER: { label: "Renter", className: "badge-blue", dot: "bg-blue-400" },
   BOTH: { label: "Both", className: "badge-purple", dot: "bg-purple-400" },
   ADMIN: { label: "Admin", className: "badge-red", dot: "bg-red-400" },
+  NEW: { label: "New", className: "badge-orange", dot: "bg-brand-400" },
+  READ: { label: "Read", className: "badge-blue", dot: "bg-blue-400" },
+  ARCHIVED: { label: "Archived", className: "badge-stone", dot: "bg-stone-400" },
+  CONTACT: { label: "Contact", className: "badge-blue", dot: "bg-blue-400" },
+  REPORT: { label: "Issue", className: "badge-red", dot: "bg-red-400" },
 };
 
 export function StatusBadge({ status, showDot = true }: { status: string; showDot?: boolean }) {

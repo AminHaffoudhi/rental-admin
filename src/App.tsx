@@ -8,6 +8,8 @@ import { Dashboard } from "@/pages/Dashboard";
 import { Deliveries } from "@/pages/Deliveries";
 import { DisputeDetail } from "@/pages/DisputeDetail";
 import { Disputes } from "@/pages/Disputes";
+import { ReportDetail } from "@/pages/ReportDetail";
+import { Reports } from "@/pages/Reports";
 import { Categories } from "@/pages/Categories";
 import { Equipment } from "@/pages/Equipment";
 import { Reviews } from "@/pages/Reviews";
@@ -35,6 +37,8 @@ export default function App(): ReactElement {
           <Route path="/payments" element={<Payments />} />
           <Route path="/disputes" element={<Disputes />} />
           <Route path="/disputes/:id" element={<DisputeDetail />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/reports/:id" element={<ReportDetail />} />
         </Route>
       </Route>
 

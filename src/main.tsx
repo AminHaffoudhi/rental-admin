@@ -3,7 +3,10 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { initOneSignal } from "@/lib/onesignal";
+import { initTheme } from "@/lib/theme";
 import "./index.css";
+
+initTheme();
 import App from "./App.tsx";
 
 void initOneSignal();

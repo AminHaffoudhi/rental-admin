@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef, useCallback, type ReactElement } from "react";
 import {
-  AlertTriangle,
-  Banknote,
+  AlertCircle,
+  BadgeCheck,
   Bell,
   BellRing,
   CalendarClock,
   CheckCheck,
+  CircleDollarSign,
+  ClipboardList,
+  ClipboardPen,
   ExternalLink,
+  MessageSquareText,
+  MessageSquareWarning,
   Package,
-  ShieldCheck,
+  Scale,
   ShieldX,
   Star,
   UserPlus,
@@ -37,6 +42,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/notificationState";
+import { cleanNotificationTitle } from "@/lib/notificationDisplay";
 import {
   equipmentIdFromNotification,
   notificationTargetPath,
@@ -70,16 +76,17 @@ type NotificationVisual = {
 
 const TYPE_CONFIG: Record<string, NotificationVisual> = {
   new_user: { Icon: UserPlus, bg: "bg-blue-50", iconClass: "text-blue-600" },
-  kyc_submitted: { Icon: ShieldCheck, bg: "bg-amber-50", iconClass: "text-amber-600" },
-  kyc_approved: { Icon: ShieldCheck, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
+  kyc_submitted: { Icon: ClipboardList, bg: "bg-amber-50", iconClass: "text-amber-600" },
+  kyc_approved: { Icon: BadgeCheck, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
   kyc_rejected: { Icon: ShieldX, bg: "bg-red-50", iconClass: "text-red-600" },
   booking_request: { Icon: CalendarClock, bg: "bg-brand-50", iconClass: "text-brand-600" },
-  dispute_admin: { Icon: AlertTriangle, bg: "bg-red-50", iconClass: "text-red-600" },
-  dispute_opened: { Icon: AlertTriangle, bg: "bg-red-50", iconClass: "text-red-600" },
-  payment_received: { Icon: Wallet, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
-  payout_sent: { Icon: Banknote, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
-  equipment_pending: { Icon: Package, bg: "bg-amber-50", iconClass: "text-amber-600" },
-  review_pending: { Icon: Star, bg: "bg-amber-50", iconClass: "text-amber-600" },
+  dispute_admin: { Icon: Scale, bg: "bg-orange-50", iconClass: "text-orange-600" },
+  dispute_opened: { Icon: AlertCircle, bg: "bg-red-50", iconClass: "text-red-600" },
+  payment_received: { Icon: Wallet, bg: "bg-teal-50", iconClass: "text-teal-600" },
+  payout_sent: { Icon: CircleDollarSign, bg: "bg-emerald-50", iconClass: "text-emerald-600" },
+  equipment_pending: { Icon: ClipboardPen, bg: "bg-amber-50", iconClass: "text-amber-700" },
+  review_pending: { Icon: MessageSquareText, bg: "bg-yellow-50", iconClass: "text-yellow-700" },
+  support_report: { Icon: MessageSquareWarning, bg: "bg-violet-50", iconClass: "text-violet-600" },
   general: { Icon: Bell, bg: "bg-stone-100", iconClass: "text-stone-500" },
 };
 
@@ -92,6 +99,7 @@ function load(): AdminNotification[] {
     return applyNotificationState(
       (JSON.parse(raw) as AdminNotification[]).map((n) => ({
         ...n,
+        title: cleanNotificationTitle(n.title),
         timestamp: new Date(n.timestamp),
       }))
     );
@@ -144,13 +152,16 @@ export default function AdminNotificationBell(): ReactElement {
       const type = (data.type as string) || "general";
       const equipmentId =
         typeof data.equipmentId === "string" ? data.equipmentId : null;
+      const reportId = typeof data.reportId === "string" ? data.reportId : null;
       const rawUrl = typeof data.url === "string" ? data.url : undefined;
       const url = rawUrl ? notificationTargetPath(rawUrl, equipmentId) : undefined;
       add({
-        id: equipmentId
-          ? `equipment-pending-${equipmentId}`
-          : crypto.randomUUID(),
-        title,
+        id: reportId
+          ? `report-${reportId}`
+          : equipmentId
+            ? `equipment-pending-${equipmentId}`
+            : crypto.randomUUID(),
+        title: cleanNotificationTitle(title),
         body,
         type,
         url,
@@ -174,7 +185,7 @@ export default function AdminNotificationBell(): ReactElement {
       const incoming: AdminNotification[] = data.data.map((n) => ({
         id: n.id,
         type: n.type,
-        title: n.title,
+        title: cleanNotificationTitle(n.title),
         body: n.body,
         url: n.url,
         timestamp: new Date(n.timestamp),
@@ -374,7 +385,7 @@ export default function AdminNotificationBell(): ReactElement {
                   </div>
                   <p className="text-sm font-semibold text-stone-700">No notifications</p>
                   <p className="mt-1 text-xs text-stone-400">
-                    New users, KYC reviews, and disputes will appear here
+                    New reports, users, KYC reviews, and disputes will appear here
                   </p>
                 </div>
               ) : (
@@ -430,7 +441,7 @@ export default function AdminNotificationBell(): ReactElement {
                               n.read ? "text-stone-600" : "font-semibold text-stone-900"
                             )}
                           >
-                            {n.title}
+                            {cleanNotificationTitle(n.title)}
                           </p>
                           <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-stone-500">{n.body}</p>
                           <div className="mt-1.5 flex items-center gap-3">

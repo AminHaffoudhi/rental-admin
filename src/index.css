@@ -81,6 +81,10 @@
     line-height: 1.6;
   }
 
+  html.dark body {
+    background-color: hsl(var(--background));
+  }
+
   h1,
   h2,
   h3,
@@ -185,6 +189,27 @@
   .input:focus {
     border-color: #ff9d3d;
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  }
+
+  html.dark .input {
+    color: hsl(var(--foreground));
+    background: hsl(var(--background));
+    border-color: hsl(var(--border));
+  }
+
+  html.dark .btn-secondary {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  html.dark .btn-ghost {
+    color: hsl(var(--muted-foreground));
+  }
+
+  html.dark .btn-ghost:hover:not(:disabled) {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
   }
 
   .badge {
