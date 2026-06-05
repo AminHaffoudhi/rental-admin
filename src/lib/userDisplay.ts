@@ -1,4 +1,4 @@
-import type { KycStatus, Role, User } from "@/types/user";
+import type { Role, User } from "@/types/user";
 
 export function isOwnerRole(role: Role): boolean {
   return role === "OWNER" || role === "BOTH";

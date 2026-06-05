@@ -134,7 +134,7 @@ function RevenueChart(): ReactElement {
             borderRadius: "10px",
             fontSize: "12px",
           }}
-          formatter={(v: number | string) => [`${v} TND`, "Revenue"]}
+          formatter={(value) => [`${value ?? 0} TND`, "Revenue"]}
         />
         <Area
           type="monotone"
